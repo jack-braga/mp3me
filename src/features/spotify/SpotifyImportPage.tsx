@@ -225,7 +225,7 @@ export function SpotifyImportPage() {
                         {playlist.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {playlist.tracks.total} tracks
+                        {playlist.tracks?.total ?? 0} tracks
                       </p>
                     </div>
                   </div>
