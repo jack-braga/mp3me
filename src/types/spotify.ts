@@ -9,7 +9,8 @@ export interface SpotifyPlaylist {
   name: string;
   description: string | null;
   images: SpotifyImage[];
-  tracks: {
+  /** Renamed from "tracks" to "items" in Spotify's Feb 2026 API update */
+  items: {
     total: number;
     href: string;
   };

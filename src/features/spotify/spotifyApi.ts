@@ -9,8 +9,8 @@ import type {
 const API_BASE = "https://api.spotify.com/v1";
 
 export class SpotifyAuthError extends Error {
-  constructor(public status: number) {
-    super(`Spotify auth error: ${status}`);
+  constructor(public status: number, message?: string) {
+    super(message ?? `Spotify auth error: ${status}`);
     this.name = "SpotifyAuthError";
   }
 }
@@ -26,13 +26,25 @@ async function spotifyFetch<T>(endpoint: string): Promise<T> {
     },
   );
 
-  if (response.status === 401 || response.status === 403) {
+  if (response.status === 401) {
     logout();
-    throw new SpotifyAuthError(response.status);
+    throw new SpotifyAuthError(401);
   }
 
   if (!response.ok) {
-    throw new Error(`Spotify API error: ${response.status}`);
+    // Try to extract Spotify's error message
+    let detail = "";
+    try {
+      const body = await response.json();
+      detail = body?.error?.message ?? "";
+    } catch {
+      // ignore parse errors
+    }
+    const msg = `Spotify API error ${response.status}${detail ? `: ${detail}` : ""}`;
+    if (response.status === 403) {
+      throw new SpotifyAuthError(403, msg);
+    }
+    throw new Error(msg);
   }
 
   return response.json();
@@ -51,12 +63,12 @@ export async function fetchUserPlaylists(): Promise<SpotifyPlaylist[]> {
   return playlists;
 }
 
+/** Fetch tracks for a playlist using the /items endpoint (renamed from /tracks in Feb 2026) */
 export async function fetchPlaylistTracks(
   playlistId: string,
 ): Promise<SpotifyTrack[]> {
   const tracks: SpotifyTrack[] = [];
-  let url: string | null =
-    `/playlists/${playlistId}/tracks?limit=100&fields=items(track(id,name,artists(name),album(name,images),duration_ms)),next,total`;
+  let url: string | null = `/playlists/${playlistId}/items?limit=100`;
 
   while (url) {
     const data: SpotifyPlaylistTracksResponse = await spotifyFetch<SpotifyPlaylistTracksResponse>(url);

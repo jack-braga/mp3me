@@ -33,11 +33,11 @@ export function SpotifyImportPage() {
       const data = await fetchUserPlaylists();
       setPlaylists(data);
     } catch (err) {
-      if (err instanceof SpotifyAuthError) {
+      if (err instanceof SpotifyAuthError && err.status === 401) {
         setConnected(false);
         setError("Spotify session expired. Please reconnect.");
       } else {
-        setError("Failed to load playlists. Try reconnecting.");
+        setError(err instanceof Error ? err.message : "Failed to load playlists.");
       }
       console.error(err);
     }
@@ -114,7 +114,7 @@ export function SpotifyImportPage() {
       navigate("/playlists");
     } catch (err) {
       console.error(err);
-      setError("Import failed. Please try again.");
+      setError(err instanceof Error ? err.message : "Import failed. Please try again.");
       setImporting(false);
       setImportProgress("");
     }
@@ -225,7 +225,7 @@ export function SpotifyImportPage() {
                         {playlist.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {playlist.tracks?.total ?? 0} tracks
+                        {playlist.items?.total ?? 0} tracks
                       </p>
                     </div>
                   </div>
