@@ -72,9 +72,11 @@ export async function fetchPlaylistTracks(
 
   while (url) {
     const data: SpotifyPlaylistTracksResponse = await spotifyFetch<SpotifyPlaylistTracksResponse>(url);
-    for (const item of data.items) {
-      if (item.track) {
-        tracks.push(item.track);
+    for (const entry of data.items) {
+      // "item" is the new field (Feb 2026), "track" is deprecated fallback
+      const trackData = entry.item ?? entry.track;
+      if (trackData) {
+        tracks.push(trackData);
       }
     }
     url = data.next;

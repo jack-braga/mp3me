@@ -40,7 +40,10 @@ export interface SpotifyTrack {
 }
 
 export interface SpotifyPlaylistTrackItem {
-  track: SpotifyTrack | null;
+  /** New field name as of Spotify's Feb 2026 API update */
+  item: SpotifyTrack | null;
+  /** @deprecated Use `item` instead — kept for backward compatibility */
+  track?: SpotifyTrack | null;
 }
 
 export interface SpotifyPlaylistTracksResponse {

@@ -32,6 +32,10 @@ jobs:
         with:
           path: dist
 
+    # Notify on build failure
+      - if: failure()
+        run: curl -d "❌ mp3me build FAILED on ${{ github.sha }}" ntfy.sh/jsb-gh
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
@@ -41,3 +45,11 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      # Notify on deploy success
+      - if: success()
+        run: curl -d "✅ mp3me deployed to ${{ steps.deployment.outputs.page_url }}" ntfy.sh/jsb-gh
+
+      # Notify on deploy failure
+      - if: failure()
+        run: curl -d "❌ mp3me deploy FAILED (build passed but deploy failed)" ntfy.sh/jsb-gh
