@@ -4,6 +4,7 @@ export interface Song {
   artist: string;
   album?: string;
   artworkUrl?: string;
+  artworkFileId?: string;
   duration?: number;
   audioFileId?: string;
   spotifyTrackId?: string;

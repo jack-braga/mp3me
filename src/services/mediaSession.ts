@@ -1,17 +1,22 @@
 import type { Song } from "@/types/song";
 
-export function updateMediaSessionMetadata(song: Song): void {
+export function updateMediaSessionMetadata(
+  song: Song,
+  artworkSrc?: string,
+): void {
   if (!("mediaSession" in navigator)) return;
+
+  const src = artworkSrc ?? song.artworkUrl;
 
   navigator.mediaSession.metadata = new MediaMetadata({
     title: song.title,
     artist: song.artist,
     album: song.album ?? "",
-    artwork: song.artworkUrl
+    artwork: src
       ? [
-          { src: song.artworkUrl, sizes: "96x96", type: "image/jpeg" },
-          { src: song.artworkUrl, sizes: "256x256", type: "image/jpeg" },
-          { src: song.artworkUrl, sizes: "512x512", type: "image/jpeg" },
+          { src, sizes: "96x96", type: "image/jpeg" },
+          { src, sizes: "256x256", type: "image/jpeg" },
+          { src, sizes: "512x512", type: "image/jpeg" },
         ]
       : [],
   });

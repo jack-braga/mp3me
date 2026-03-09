@@ -9,3 +9,4 @@ export const SPOTIFY_SCOPES = "playlist-read-private playlist-read-collaborative
 // Storage
 export const STORAGE_WARNING_THRESHOLD = 0.8;
 export const MAX_UPLOAD_SIZE_BYTES = 100 * 1024 * 1024; // 100MB
+export const MAX_IMAGE_SIZE_BYTES = 10 * 1024 * 1024; // 10MB

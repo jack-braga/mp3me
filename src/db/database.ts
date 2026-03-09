@@ -13,6 +13,11 @@ export class Mp3meDB extends Dexie {
       songs: "id, title, artist, album, spotifyTrackId, createdAt",
       playlists: "id, name, createdAt",
     });
+
+    this.version(2).stores({
+      songs: "id, title, artist, album, spotifyTrackId, createdAt",
+      playlists: "id, name, createdAt",
+    });
   }
 }
 

@@ -30,7 +30,8 @@ export function SettingsPage() {
     // Clear OPFS
     try {
       const root = await navigator.storage.getDirectory();
-      await (root as FileSystemDirectoryHandle).removeEntry("audio", { recursive: true });
+      await (root as FileSystemDirectoryHandle).removeEntry("audio", { recursive: true }).catch(() => {});
+      await (root as FileSystemDirectoryHandle).removeEntry("images", { recursive: true }).catch(() => {});
     } catch {
       // Directory may not exist
     }

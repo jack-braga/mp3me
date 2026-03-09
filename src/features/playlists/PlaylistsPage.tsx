@@ -5,6 +5,9 @@ import {
   createPlaylist,
   deletePlaylist,
 } from "@/db/playlistRepository";
+import { useArtworkUrl } from "@/hooks/useArtworkUrl";
+import type { Playlist } from "@/types/playlist";
+import { PlaylistIcon, TrashIcon } from "@/components/icons";
 
 export function PlaylistsPage() {
   const playlists = usePlaylists();
@@ -13,8 +16,10 @@ export function PlaylistsPage() {
 
   if (playlists === undefined) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        Loading...
+      <div className="flex h-full flex-col">
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">
+          Loading...
+        </div>
       </div>
     );
   }
@@ -49,36 +54,16 @@ export function PlaylistsPage() {
           </div>
         ) : (
           playlists.map((playlist) => (
-            <div
+            <PlaylistRow
               key={playlist.id}
-              className="flex items-center gap-3 px-4 py-3 active:bg-muted/50"
+              playlist={playlist}
               onClick={() => navigate(`/playlists/${playlist.id}`)}
-              role="button"
-              tabIndex={0}
-            >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                <PlaylistIcon className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">{playlist.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {playlist.songIds.length} song
-                  {playlist.songIds.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (confirm(`Delete "${playlist.name}"?`)) {
-                    deletePlaylist(playlist.id);
-                  }
-                }}
-                className="rounded-full p-2 text-muted-foreground active:bg-muted"
-                aria-label="Delete playlist"
-              >
-                <TrashIcon className="h-4 w-4" />
-              </button>
-            </div>
+              onDelete={() => {
+                if (confirm(`Delete "${playlist.name}"?`)) {
+                  deletePlaylist(playlist.id);
+                }
+              }}
+            />
           ))
         )}
       </div>
@@ -93,6 +78,52 @@ export function PlaylistsPage() {
           }}
         />
       )}
+    </div>
+  );
+}
+
+function PlaylistRow({
+  playlist,
+  onClick,
+  onDelete,
+}: {
+  playlist: Playlist;
+  onClick: () => void;
+  onDelete: () => void;
+}) {
+  const artworkUrl = useArtworkUrl(playlist.artworkFileId);
+
+  return (
+    <div
+      className="flex items-center gap-3 px-4 py-3 active:bg-muted/50"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+    >
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
+        {artworkUrl ? (
+          <img src={artworkUrl} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <PlaylistIcon className="h-5 w-5" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{playlist.name}</p>
+        <p className="text-xs text-muted-foreground">
+          {playlist.songIds.length} song
+          {playlist.songIds.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete();
+        }}
+        className="rounded-full p-2 text-muted-foreground active:bg-muted"
+        aria-label="Delete playlist"
+      >
+        <TrashIcon className="h-4 w-4" />
+      </button>
     </div>
   );
 }
@@ -146,45 +177,5 @@ function CreatePlaylistDialog({
         </form>
       </div>
     </>
-  );
-}
-
-function PlaylistIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M21 15V6" />
-      <path d="M18.5 18a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-      <path d="M12 12H3" />
-      <path d="M16 6H3" />
-      <path d="M12 18H3" />
-    </svg>
-  );
-}
-
-function TrashIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="M3 6h18" />
-      <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-      <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
-    </svg>
   );
 }

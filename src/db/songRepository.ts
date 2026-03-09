@@ -2,12 +2,18 @@ import { db } from "./database";
 import { generateId } from "@/lib/uuid";
 import type { Song } from "@/types/song";
 import { deleteAudioFile } from "@/services/audioStorage";
+import { deleteImageFile } from "@/services/imageStorage";
 
 type CreateSongInput = Pick<Song, "title" | "artist"> &
   Partial<
     Pick<
       Song,
-      "album" | "artworkUrl" | "duration" | "audioFileId" | "spotifyTrackId"
+      | "album"
+      | "artworkUrl"
+      | "artworkFileId"
+      | "duration"
+      | "audioFileId"
+      | "spotifyTrackId"
     >
   >;
 
@@ -18,6 +24,7 @@ type UpdateSongInput = Partial<
     | "artist"
     | "album"
     | "artworkUrl"
+    | "artworkFileId"
     | "duration"
     | "audioFileId"
     | "spotifyTrackId"
@@ -32,6 +39,7 @@ export async function createSong(input: CreateSongInput): Promise<Song> {
     artist: input.artist,
     album: input.album,
     artworkUrl: input.artworkUrl,
+    artworkFileId: input.artworkFileId,
     duration: input.duration,
     audioFileId: input.audioFileId,
     spotifyTrackId: input.spotifyTrackId,
@@ -55,9 +63,12 @@ export async function deleteSong(id: string): Promise<void> {
 
   // Clean up audio file from OPFS
   if (song.audioFileId) {
-    await deleteAudioFile(song.audioFileId).catch(() => {
-      // File may already be deleted, ignore
-    });
+    await deleteAudioFile(song.audioFileId).catch(() => {});
+  }
+
+  // Clean up artwork file from OPFS
+  if (song.artworkFileId) {
+    await deleteImageFile(song.artworkFileId).catch(() => {});
   }
 
   // Remove song from all playlists that reference it
@@ -97,6 +108,7 @@ export async function bulkCreateSongs(inputs: CreateSongInput[]): Promise<Song[]
     artist: input.artist,
     album: input.album,
     artworkUrl: input.artworkUrl,
+    artworkFileId: input.artworkFileId,
     duration: input.duration,
     audioFileId: input.audioFileId,
     spotifyTrackId: input.spotifyTrackId,

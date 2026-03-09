@@ -1,12 +1,13 @@
 import { db } from "./database";
 import { generateId } from "@/lib/uuid";
 import type { Playlist } from "@/types/playlist";
+import { deleteImageFile } from "@/services/imageStorage";
 
 type CreatePlaylistInput = Pick<Playlist, "name"> &
-  Partial<Pick<Playlist, "description" | "songIds">>;
+  Partial<Pick<Playlist, "description" | "artworkFileId" | "songIds">>;
 
 type UpdatePlaylistInput = Partial<
-  Pick<Playlist, "name" | "description" | "songIds">
+  Pick<Playlist, "name" | "description" | "artworkFileId" | "songIds">
 >;
 
 export async function createPlaylist(
@@ -17,6 +18,7 @@ export async function createPlaylist(
     id: generateId(),
     name: input.name,
     description: input.description,
+    artworkFileId: input.artworkFileId,
     songIds: input.songIds ?? [],
     createdAt: now,
     updatedAt: now,
@@ -33,6 +35,10 @@ export async function updatePlaylist(
 }
 
 export async function deletePlaylist(id: string): Promise<void> {
+  const playlist = await db.playlists.get(id);
+  if (playlist?.artworkFileId) {
+    await deleteImageFile(playlist.artworkFileId).catch(() => {});
+  }
   await db.playlists.delete(id);
 }
 

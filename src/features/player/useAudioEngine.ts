@@ -6,6 +6,7 @@ import {
   updateMediaSessionPosition,
   setMediaSessionHandlers,
 } from "@/services/mediaSession";
+import { getImageFileUrl } from "@/services/imageStorage";
 
 export function useAudioEngine() {
   const currentAudioUrl = usePlayerStore((s) => s.currentAudioUrl);
@@ -26,8 +27,13 @@ export function useAudioEngine() {
 
   // Update media session metadata
   useEffect(() => {
-    if (currentSong) {
-      updateMediaSessionMetadata(currentSong);
+    if (!currentSong) return;
+    if (currentSong.artworkFileId) {
+      getImageFileUrl(currentSong.artworkFileId).then((url) => {
+        updateMediaSessionMetadata(currentSong, url ?? currentSong.artworkUrl);
+      });
+    } else {
+      updateMediaSessionMetadata(currentSong, currentSong.artworkUrl);
     }
   }, [currentSong]);
 

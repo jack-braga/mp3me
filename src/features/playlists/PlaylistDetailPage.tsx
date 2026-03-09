@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePlaylist } from "@/hooks/usePlaylists";
 import { usePlaylistSongs } from "@/hooks/usePlaylistSongs";
@@ -6,11 +6,17 @@ import { useSongs } from "@/hooks/useSongs";
 import { usePlayerStore } from "@/stores/playerStore";
 import {
   deletePlaylist,
+  updatePlaylist,
   addSongToPlaylist,
-  removeSongFromPlaylist,
 } from "@/db/playlistRepository";
-import { formatDuration } from "@/lib/formatters";
+import { generateId } from "@/lib/uuid";
+import { MAX_IMAGE_SIZE_BYTES } from "@/lib/constants";
+import { saveImageFile } from "@/services/imageStorage";
+import { useArtworkUrl } from "@/hooks/useArtworkUrl";
 import type { Song } from "@/types/song";
+import { SongRow } from "@/components/SongRow";
+import { EditSongDialog } from "@/components/EditSongDialog";
+import { PlayIcon, XIcon, MusicNoteIcon, PlaylistIcon, ImageIcon } from "@/components/icons";
 
 export function PlaylistDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -18,15 +24,25 @@ export function PlaylistDetailPage() {
   const playlist = usePlaylist(id);
   const playlistSongs = usePlaylistSongs(playlist?.songIds);
   const [showAddSongs, setShowAddSongs] = useState(false);
+  const [editingSong, setEditingSong] = useState<Song | null>(null);
+  const imageRef = useRef<HTMLInputElement>(null);
 
   const playSong = usePlayerStore((s) => s.playSong);
-  const currentSong = usePlayerStore((s) => s.currentSong);
-  const isPlaying = usePlayerStore((s) => s.isPlaying);
+
+  // Playlist artwork: custom > first song's artwork > undefined
+  const firstSongArtworkFileId = playlistSongs?.[0]?.artworkFileId;
+  const firstSongArtworkUrl = playlistSongs?.[0]?.artworkUrl;
+  const playlistArtworkUrl = useArtworkUrl(
+    playlist?.artworkFileId ?? firstSongArtworkFileId,
+    firstSongArtworkUrl,
+  );
 
   if (playlist === undefined || playlistSongs === undefined) {
     return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        Loading...
+      <div className="flex h-full flex-col">
+        <div className="flex flex-1 items-center justify-center text-muted-foreground">
+          Loading...
+        </div>
       </div>
     );
   }
@@ -49,8 +65,24 @@ export function PlaylistDetailPage() {
 
   const handlePlayAll = () => {
     if (playableSongs.length > 0 && playableSongs[0]) {
-      playSong(playableSongs[0], playableSongs);
+      playSong(playableSongs[0], playableSongs, playlist.name);
     }
+  };
+
+  const handleAttachImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      alert("Please select an image file.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_SIZE_BYTES) {
+      alert("Image too large. Max 10MB.");
+      return;
+    }
+    const artworkFileId = generateId();
+    await saveImageFile(artworkFileId, file);
+    await updatePlaylist(playlist.id, { artworkFileId });
   };
 
   return (
@@ -63,26 +95,49 @@ export function PlaylistDetailPage() {
         >
           &larr; Playlists
         </button>
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{playlist.name}</h1>
+        <div className="flex items-center gap-4">
+          {/* Playlist artwork */}
+          <button
+            onClick={() => imageRef.current?.click()}
+            className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-muted active:opacity-80"
+            aria-label="Change playlist artwork"
+          >
+            {playlistArtworkUrl ? (
+              <img src={playlistArtworkUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                <PlaylistIcon className="h-6 w-6" />
+              </div>
+            )}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors active:bg-black/30">
+              <ImageIcon className="h-4 w-4 text-white opacity-0 transition-opacity active:opacity-100" />
+            </div>
+          </button>
+          <input
+            ref={imageRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAttachImage}
+          />
+
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-2xl font-bold">{playlist.name}</h1>
             <p className="text-sm text-muted-foreground">
               {playlistSongs.length} song{playlistSongs.length !== 1 ? "s" : ""}
               {playableSongs.length < playlistSongs.length &&
                 ` (${playableSongs.length} playable)`}
             </p>
           </div>
-          <div className="flex gap-2">
-            {playableSongs.length > 0 && (
-              <button
-                onClick={handlePlayAll}
-                className="rounded-full bg-primary p-2.5 text-primary-foreground active:opacity-80"
-                aria-label="Play all"
-              >
-                <PlayIcon className="h-5 w-5" />
-              </button>
-            )}
-          </div>
+          {playableSongs.length > 0 && (
+            <button
+              onClick={handlePlayAll}
+              className="rounded-full bg-primary p-2.5 text-primary-foreground active:opacity-80"
+              aria-label="Play all"
+            >
+              <PlayIcon className="h-5 w-5" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -115,16 +170,13 @@ export function PlaylistDetailPage() {
           </div>
         ) : (
           playlistSongs.map((song) => (
-            <PlaylistSongRow
+            <SongRow
               key={song.id}
               song={song}
-              playlistId={playlist.id}
-              isCurrentSong={currentSong?.id === song.id && isPlaying}
-              onPlay={() => {
-                if (song.audioFileId) {
-                  playSong(song, playableSongs);
-                }
-              }}
+              contextQueue={playableSongs}
+              contextName={playlist.name}
+              context={{ type: "playlist", playlistId: playlist.id }}
+              onEdit={() => setEditingSong(song)}
             />
           ))
         )}
@@ -138,68 +190,11 @@ export function PlaylistDetailPage() {
           onClose={() => setShowAddSongs(false)}
         />
       )}
-    </div>
-  );
-}
 
-function PlaylistSongRow({
-  song,
-  playlistId,
-  isCurrentSong,
-  onPlay,
-}: {
-  song: Song;
-  playlistId: string;
-  isCurrentSong: boolean;
-  onPlay: () => void;
-}) {
-  const hasAudio = !!song.audioFileId;
-
-  return (
-    <div
-      className="flex items-center gap-3 px-4 py-2 active:bg-muted/50"
-      onClick={onPlay}
-      role={hasAudio ? "button" : undefined}
-      tabIndex={hasAudio ? 0 : undefined}
-    >
-      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
-        {song.artworkUrl ? (
-          <img src={song.artworkUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <MusicNoteIcon className="h-4 w-4" />
-          </div>
-        )}
-        {!hasAudio && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50">
-            <span className="text-[9px] font-medium text-white">No file</span>
-          </div>
-        )}
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className={`truncate text-sm font-medium ${isCurrentSong ? "text-primary" : ""}`}>
-          {song.title}
-        </p>
-        <p className="truncate text-xs text-muted-foreground">{song.artist}</p>
-      </div>
-
-      {song.duration && (
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {formatDuration(song.duration)}
-        </span>
+      {/* Edit song dialog */}
+      {editingSong && (
+        <EditSongDialog song={editingSong} onClose={() => setEditingSong(null)} />
       )}
-
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          removeSongFromPlaylist(playlistId, song.id);
-        }}
-        className="rounded-full p-1 text-muted-foreground active:bg-muted"
-        aria-label="Remove from playlist"
-      >
-        <XIcon className="h-4 w-4" />
-      </button>
     </div>
   );
 }
@@ -283,31 +278,5 @@ function AddSongsSheet({
         </div>
       </div>
     </>
-  );
-}
-
-function MusicNoteIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <circle cx="8" cy="18" r="4" />
-      <path d="M12 18V2l7 4" />
-    </svg>
-  );
-}
-
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={className}>
-      <path d="M8 5v14l11-7z" />
-    </svg>
-  );
-}
-
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M18 6 6 18" />
-      <path d="m6 6 12 12" />
-    </svg>
   );
 }

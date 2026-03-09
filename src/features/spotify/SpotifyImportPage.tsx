@@ -95,7 +95,6 @@ export function SpotifyImportPage() {
             artist: track.artists.map((a) => a.name).join(", "),
             album: track.album.name,
             artworkUrl,
-            duration: Math.round(track.duration_ms / 1000),
             spotifyTrackId: track.id,
           });
 
