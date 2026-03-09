@@ -1,4 +1,4 @@
-import { getValidAccessToken } from "@/services/spotifyAuth";
+import { getValidAccessToken, logout } from "@/services/spotifyAuth";
 import type {
   SpotifyPlaylistsResponse,
   SpotifyPlaylistTracksResponse,
@@ -8,9 +8,16 @@ import type {
 
 const API_BASE = "https://api.spotify.com/v1";
 
+export class SpotifyAuthError extends Error {
+  constructor(public status: number) {
+    super(`Spotify auth error: ${status}`);
+    this.name = "SpotifyAuthError";
+  }
+}
+
 async function spotifyFetch<T>(endpoint: string): Promise<T> {
   const token = await getValidAccessToken();
-  if (!token) throw new Error("Not authenticated with Spotify");
+  if (!token) throw new SpotifyAuthError(401);
 
   const response = await fetch(
     endpoint.startsWith("http") ? endpoint : `${API_BASE}${endpoint}`,
@@ -18,6 +25,11 @@ async function spotifyFetch<T>(endpoint: string): Promise<T> {
       headers: { Authorization: `Bearer ${token}` },
     },
   );
+
+  if (response.status === 401 || response.status === 403) {
+    logout();
+    throw new SpotifyAuthError(response.status);
+  }
 
   if (!response.ok) {
     throw new Error(`Spotify API error: ${response.status}`);

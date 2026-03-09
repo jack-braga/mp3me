@@ -5,7 +5,7 @@ import {
   isSpotifyConnected,
   logout,
 } from "@/services/spotifyAuth";
-import { fetchUserPlaylists, fetchPlaylistTracks } from "./spotifyApi";
+import { fetchUserPlaylists, fetchPlaylistTracks, SpotifyAuthError } from "./spotifyApi";
 import { createPlaylist } from "@/db/playlistRepository";
 import { findSongBySpotifyId, createSong } from "@/db/songRepository";
 import type { SpotifyPlaylist } from "@/types/spotify";
@@ -33,7 +33,12 @@ export function SpotifyImportPage() {
       const data = await fetchUserPlaylists();
       setPlaylists(data);
     } catch (err) {
-      setError("Failed to load playlists. Try reconnecting.");
+      if (err instanceof SpotifyAuthError) {
+        setConnected(false);
+        setError("Spotify session expired. Please reconnect.");
+      } else {
+        setError("Failed to load playlists. Try reconnecting.");
+      }
       console.error(err);
     }
     setLoading(false);
