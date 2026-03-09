@@ -8,6 +8,7 @@ import { FullPlayer } from "@/features/player/FullPlayer";
 import { SpotifyImportPage } from "@/features/spotify/SpotifyImportPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { handleSpotifyCallback } from "@/services/spotifyAuth";
+import { migrateRemoteArtwork } from "@/services/artworkMigration";
 
 function SpotifyCallbackHandler() {
   useEffect(() => {
@@ -28,6 +29,10 @@ function SpotifyCallbackHandler() {
 }
 
 export function App() {
+  useEffect(() => {
+    migrateRemoteArtwork().catch(console.error);
+  }, []);
+
   return (
     <>
       <SpotifyCallbackHandler />

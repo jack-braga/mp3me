@@ -8,6 +8,8 @@ import {
 import { fetchUserPlaylists, fetchPlaylistTracks, SpotifyAuthError } from "./spotifyApi";
 import { createPlaylist } from "@/db/playlistRepository";
 import { findSongBySpotifyId, createSong } from "@/db/songRepository";
+import { downloadAndStoreArtwork } from "@/services/artworkDownloader";
+import { ArtworkImage } from "@/components/ArtworkImage";
 import type { SpotifyPlaylist } from "@/types/spotify";
 
 export function SpotifyImportPage() {
@@ -72,13 +74,17 @@ export function SpotifyImportPage() {
       const selectedPlaylists =
         playlists?.filter((p) => selected.has(p.id)) ?? [];
 
+      // Dedup map: same album artwork URL → same OPFS file
+      const artworkUrlToFileId = new Map<string, string>();
+
       for (const sp of selectedPlaylists) {
         setImportProgress(`Importing "${sp.name}"...`);
 
         const tracks = await fetchPlaylistTracks(sp.id);
         const songIds: string[] = [];
 
-        for (const track of tracks) {
+        for (let i = 0; i < tracks.length; i++) {
+          const track = tracks[i]!;
           // Check if song already exists by Spotify ID
           const existing = await findSongBySpotifyId(track.id);
           if (existing) {
@@ -86,15 +92,24 @@ export function SpotifyImportPage() {
             continue;
           }
 
-          // Get artwork URL (largest image)
-          const artworkUrl =
-            track.album.images[0]?.url ?? undefined;
+          // Download artwork locally (fetch works under COEP, <img> doesn't)
+          const artworkImageUrl = track.album.images[0]?.url;
+          let artworkFileId: string | undefined;
+          if (artworkImageUrl) {
+            setImportProgress(
+              `Importing "${sp.name}" — artwork ${i + 1}/${tracks.length}`,
+            );
+            artworkFileId = await downloadAndStoreArtwork(
+              artworkImageUrl,
+              artworkUrlToFileId,
+            );
+          }
 
           const song = await createSong({
             title: track.name,
             artist: track.artists.map((a) => a.name).join(", "),
             album: track.album.name,
-            artworkUrl,
+            artworkFileId,
             spotifyTrackId: track.id,
           });
 
@@ -206,11 +221,14 @@ export function SpotifyImportPage() {
 
                     <div className="h-10 w-10 shrink-0 overflow-hidden rounded bg-muted">
                       {playlist.images[0]?.url ? (
-                        <img
+                        <ArtworkImage
                           src={playlist.images[0].url}
-                          alt=""
                           className="h-full w-full object-cover"
-                          crossOrigin="anonymous"
+                          fallback={
+                            <div className="flex h-full w-full items-center justify-center text-muted-foreground text-xs">
+                              ?
+                            </div>
+                          }
                         />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-muted-foreground text-xs">

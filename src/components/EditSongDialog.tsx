@@ -13,6 +13,7 @@ import { MAX_UPLOAD_SIZE_BYTES, MAX_IMAGE_SIZE_BYTES } from "@/lib/constants";
 import { getAudioDuration } from "@/lib/audioDuration";
 import { useArtworkUrl } from "@/hooks/useArtworkUrl";
 import { MusicNoteIcon } from "@/components/icons";
+import { ArtworkImage } from "@/components/ArtworkImage";
 
 interface EditSongDialogProps {
   song: Song;
@@ -137,7 +138,15 @@ export function EditSongDialog({ song, onClose }: EditSongDialogProps) {
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
                 {displayArtwork ? (
-                  <img src={displayArtwork} alt="" className="h-full w-full object-cover" />
+                  <ArtworkImage
+                    src={displayArtwork}
+                    className="h-full w-full object-cover"
+                    fallback={
+                      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                        <MusicNoteIcon className="h-5 w-5" />
+                      </div>
+                    }
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                     <MusicNoteIcon className="h-5 w-5" />

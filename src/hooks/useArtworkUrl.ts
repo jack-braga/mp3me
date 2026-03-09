@@ -12,6 +12,10 @@ export function useArtworkUrl(
     if (artworkFileId && blobUrlCache.has(artworkFileId)) {
       return blobUrlCache.get(artworkFileId);
     }
+    // If artworkFileId exists but isn't cached yet, return undefined
+    // (will resolve async). Don't fall back to artworkUrl — remote URLs
+    // are blocked by COEP and would cause broken images.
+    if (artworkFileId) return undefined;
     return artworkUrl;
   });
 
@@ -33,7 +37,8 @@ export function useArtworkUrl(
         blobUrlCache.set(artworkFileId, url);
         setResolvedUrl(url);
       } else {
-        setResolvedUrl(artworkUrl);
+        // OPFS file missing — show placeholder instead of broken remote URL
+        setResolvedUrl(undefined);
       }
     });
 

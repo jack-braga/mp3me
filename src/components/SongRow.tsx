@@ -6,6 +6,7 @@ import { formatDuration } from "@/lib/formatters";
 import { deleteSong } from "@/db/songRepository";
 import { removeSongFromPlaylist } from "@/db/playlistRepository";
 import { MusicNoteIcon, DotsIcon } from "@/components/icons";
+import { ArtworkImage } from "@/components/ArtworkImage";
 import { AddToPlaylistSheet } from "@/components/AddToPlaylistSheet";
 
 export type SongRowContext =
@@ -43,7 +44,15 @@ export function SongRow({ song, contextQueue, contextName, context, onEdit }: So
         {/* Artwork */}
         <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-md bg-muted">
           {artworkUrl ? (
-            <img src={artworkUrl} alt="" className="h-full w-full object-cover" />
+            <ArtworkImage
+              src={artworkUrl}
+              className="h-full w-full object-cover"
+              fallback={
+                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                  <MusicNoteIcon className="h-5 w-5" />
+                </div>
+              }
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">
               <MusicNoteIcon className="h-5 w-5" />

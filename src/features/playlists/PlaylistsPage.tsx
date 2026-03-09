@@ -8,6 +8,7 @@ import {
 import { useArtworkUrl } from "@/hooks/useArtworkUrl";
 import type { Playlist } from "@/types/playlist";
 import { PlaylistIcon, TrashIcon } from "@/components/icons";
+import { ArtworkImage } from "@/components/ArtworkImage";
 
 export function PlaylistsPage() {
   const playlists = usePlaylists();
@@ -102,7 +103,11 @@ function PlaylistRow({
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
         {artworkUrl ? (
-          <img src={artworkUrl} alt="" className="h-full w-full object-cover" />
+          <ArtworkImage
+            src={artworkUrl}
+            className="h-full w-full object-cover"
+            fallback={<PlaylistIcon className="h-5 w-5" />}
+          />
         ) : (
           <PlaylistIcon className="h-5 w-5" />
         )}

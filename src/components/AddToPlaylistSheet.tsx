@@ -1,6 +1,7 @@
 import { usePlaylists } from "@/hooks/usePlaylists";
 import { addSongToPlaylist } from "@/db/playlistRepository";
 import { XIcon, PlaylistIcon } from "@/components/icons";
+import { ArtworkImage } from "@/components/ArtworkImage";
 import { useArtworkUrl } from "@/hooks/useArtworkUrl";
 import type { Playlist } from "@/types/playlist";
 
@@ -66,7 +67,11 @@ function PlaylistItem({
     >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-muted text-muted-foreground">
         {artworkUrl ? (
-          <img src={artworkUrl} alt="" className="h-full w-full object-cover" />
+          <ArtworkImage
+            src={artworkUrl}
+            className="h-full w-full object-cover"
+            fallback={<PlaylistIcon className="h-4 w-4" />}
+          />
         ) : (
           <PlaylistIcon className="h-4 w-4" />
         )}

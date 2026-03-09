@@ -8,3 +8,6 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );
+
+// Remove splash screen after React mounts
+document.getElementById("splash")?.remove();

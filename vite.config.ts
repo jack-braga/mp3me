@@ -34,21 +34,6 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,svg,woff2}"],
         runtimeCaching: [
           {
-            // Cache Spotify artwork images
-            urlPattern: /^https:\/\/i\.scdn\.co\/.*/i,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "spotify-artwork",
-              expiration: {
-                maxEntries: 500,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
-          {
             // Cache ffmpeg core files from CDN
             urlPattern: /^https:\/\/unpkg\.com\/@ffmpeg\/.*/i,
             handler: "CacheFirst",

@@ -17,6 +17,7 @@ import type { Song } from "@/types/song";
 import { SongRow } from "@/components/SongRow";
 import { EditSongDialog } from "@/components/EditSongDialog";
 import { PlayIcon, XIcon, MusicNoteIcon, PlaylistIcon, ImageIcon } from "@/components/icons";
+import { ArtworkImage } from "@/components/ArtworkImage";
 
 export function PlaylistDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -103,7 +104,15 @@ export function PlaylistDetailPage() {
             aria-label="Change playlist artwork"
           >
             {playlistArtworkUrl ? (
-              <img src={playlistArtworkUrl} alt="" className="h-full w-full object-cover" />
+              <ArtworkImage
+                src={playlistArtworkUrl}
+                className="h-full w-full object-cover"
+                fallback={
+                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                    <PlaylistIcon className="h-6 w-6" />
+                  </div>
+                }
+              />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-muted-foreground">
                 <PlaylistIcon className="h-6 w-6" />

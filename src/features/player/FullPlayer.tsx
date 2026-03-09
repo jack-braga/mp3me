@@ -16,6 +16,7 @@ import {
   QueueIcon,
   XIcon,
 } from "@/components/icons";
+import { ArtworkImage } from "@/components/ArtworkImage";
 
 export function FullPlayer() {
   const navigate = useNavigate();
@@ -76,10 +77,14 @@ export function FullPlayer() {
           {/* Artwork */}
           <div className="mx-auto mb-8 aspect-square w-full max-w-[300px] overflow-hidden rounded-xl bg-muted shadow-2xl">
             {artworkUrl ? (
-              <img
+              <ArtworkImage
                 src={artworkUrl}
-                alt=""
                 className="h-full w-full object-cover"
+                fallback={
+                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                    <MusicNoteIcon className="h-20 w-20" />
+                  </div>
+                }
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-muted-foreground">
@@ -229,7 +234,15 @@ function QueueItem({ song, onRemove }: { song: Song; onRemove?: () => void }) {
     <div className="flex items-center gap-3 py-1.5">
       <div className="h-8 w-8 shrink-0 overflow-hidden rounded bg-muted">
         {artworkUrl ? (
-          <img src={artworkUrl} alt="" className="h-full w-full object-cover" />
+          <ArtworkImage
+            src={artworkUrl}
+            className="h-full w-full object-cover"
+            fallback={
+              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                <MusicNoteIcon className="h-3 w-3" />
+              </div>
+            }
+          />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-muted-foreground">
             <MusicNoteIcon className="h-3 w-3" />

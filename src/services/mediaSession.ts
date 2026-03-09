@@ -6,7 +6,8 @@ export function updateMediaSessionMetadata(
 ): void {
   if (!("mediaSession" in navigator)) return;
 
-  const src = artworkSrc ?? song.artworkUrl;
+  // Only use local blob URLs; remote URLs fail under COEP
+  const src = artworkSrc;
 
   navigator.mediaSession.metadata = new MediaMetadata({
     title: song.title,

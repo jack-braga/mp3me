@@ -2,6 +2,7 @@ import { usePlayerStore } from "@/stores/playerStore";
 import { useArtworkUrl } from "@/hooks/useArtworkUrl";
 import { useNavigate } from "react-router-dom";
 import { MusicNoteIcon, PlayIcon, PauseIcon, NextIcon } from "@/components/icons";
+import { ArtworkImage } from "@/components/ArtworkImage";
 
 export function MiniPlayer() {
   const currentSong = usePlayerStore((s) => s.currentSong);
@@ -41,10 +42,14 @@ export function MiniPlayer() {
         {/* Artwork */}
         <div className="h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
           {artworkUrl ? (
-            <img
+            <ArtworkImage
               src={artworkUrl}
-              alt=""
               className="h-full w-full object-cover"
+              fallback={
+                <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                  <MusicNoteIcon className="h-5 w-5" />
+                </div>
+              }
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">
